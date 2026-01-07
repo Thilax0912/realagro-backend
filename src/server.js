@@ -13,6 +13,33 @@ const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 const ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
 
+// ✅ CORS (important) — allow multiple origins
+const allowedOrigins = [
+  "http://localhost:3000",
+  ORIGIN, // if you set CLIENT_ORIGIN in Render
+  // ✅ add your vercel domain here (example)
+  "https://realagro-frontend.vercel.app",
+];
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // allow requests with no origin (Postman, curl)
+      if (!origin) return cb(null, true);
+
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+
+      return cb(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ✅ handle preflight properly (important)
+app.options("*", cors());
+
 // Use MONGODB_URI (and also support MONGO_URI if you ever switch)
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
 
