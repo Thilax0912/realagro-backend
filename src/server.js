@@ -11,31 +11,35 @@ import messageRoutes from "./routes/message.routes.js";
 const app = express();
 
 const PORT = Number(process.env.PORT) || 4000;
-const ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
-
-// ✅ CORS (important) — allow multiple origins
-const allowedOrigins = [
-  "http://localhost:3000",
-  ORIGIN, // if you set CLIENT_ORIGIN in Render
-  // ✅ add your vercel domain here (example)
-  "https://realagro-frontend.vercel.app",
-];
+// ✅ CORS (supports multiple origins)
+const ORIGINS = (process.env.CLIENT_ORIGIN || "http://localhost:3000")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
-    origin: (origin, cb) => {
-      // allow requests with no origin (Postman, curl)
-      if (!origin) return cb(null, true);
+    origin: function (origin, callback) {
+      // allow requests with no origin (like Postman)
+      if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) return cb(null, true);
+      // allow exact matches
+      if (ORIGINS.includes(origin)) return callback(null, true);
 
-      return cb(new Error(`CORS blocked: ${origin}`));
+      // allow any vercel preview domain for your project (optional but helpful)
+      if (origin.endsWith(".vercel.app")) return callback(null, true);
+
+      return callback(new Error("Not allowed by CORS: " + origin));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// preflight
+app.options("*", cors());
+
 
 // ✅ handle preflight properly (important)
 app.options("*", cors());
